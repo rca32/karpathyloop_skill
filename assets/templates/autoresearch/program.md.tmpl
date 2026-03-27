@@ -1,0 +1,25 @@
+# __TARGET_SKILL_NAME__ Research Program
+
+Research objective:
+- Improve one repository-local Codex skill, `__TARGET_SKILL_NAME__`.
+- __PROGRAM_SUMMARY__
+
+What good looks like:
+- Higher weighted benchmark score than baseline.
+- No increase in false triggers on negative cases.
+- Zero safety regressions.
+- Small, reversible skill edits.
+
+Operating constraints:
+- Treat `AGENTS.md`, this file, benchmark cases, promotion logic, and Codex config as human-owned.
+- Candidate edits must stay inside `autoresearch/candidates/<RUN_ID>/`.
+- Prefer instruction-quality improvements first.
+
+Candidate guardrails:
+__MUTATION_GUARDRAILS__
+
+Expected workflow:
+1. Read recent failures.
+2. Generate exactly two candidate hypotheses.
+3. Benchmark baseline and both candidates.
+4. Promote only if the score gate is satisfied.

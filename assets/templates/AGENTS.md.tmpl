@@ -1,0 +1,26 @@
+# Autoresearch Guardrails for __TARGET_SKILL_NAME__
+
+This repository exists to improve a single Codex skill: `__TARGET_SKILL_NAME__`.
+
+Human-owned files:
+- `AGENTS.md`
+- `autoresearch/program.md`
+- `autoresearch/bench/`
+- `autoresearch/run_autoresearch.py`
+- `.codex/config.toml`
+- `.codex/hooks.json`
+- `.codex/hooks/`
+- `.codex/agents/`
+
+Mutable files for autoresearch runs:
+- `__TARGET_SKILL_MUTABLE_PATH__`
+- `autoresearch/candidates/<RUN_ID>/`
+- `autoresearch/runs/<RUN_ID>/`
+- `autoresearch/leaderboard.json`
+
+Autoresearch rules:
+- Only improve the target skill or its candidate copies.
+- Never edit benchmark cases, promotion logic, hooks, or Codex configuration.
+- Keep each candidate small and reversible.
+- One hypothesis per candidate.
+- Evaluation runs are read-only and must return structured JSON only.

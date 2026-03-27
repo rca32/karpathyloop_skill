@@ -1,0 +1,44 @@
+#!/usr/bin/env python3
+from __future__ import annotations
+
+import json
+from collections import Counter
+from pathlib import Path
+
+
+def main() -> int:
+    payload = json.load(__import__("sys").stdin)
+    cwd = Path(payload["cwd"]).resolve()
+    leaderboard_path = cwd / "autoresearch" / "leaderboard.json"
+
+    if not leaderboard_path.exists():
+        additional_context = "No prior autoresearch runs yet. Start from the baseline skill."
+    else:
+        leaderboard = json.loads(leaderboard_path.read_text())
+        history = leaderboard.get("history", [])[-5:]
+        issues = Counter()
+        for entry in history:
+            for regression in entry.get("regressions", []):
+                key = regression.get("issue", "unknown")
+                issues[key] += 1
+
+        if issues:
+            lines = ["Recent recurring autoresearch failures:"]
+            for issue, count in issues.most_common(3):
+                lines.append(f"- {issue}: {count} recent occurrences")
+            additional_context = "\n".join(lines)
+        else:
+            additional_context = "Recent autoresearch runs show no recurring regression cluster yet."
+
+    response = {
+        "hookSpecificOutput": {
+            "hookEventName": "SessionStart",
+            "additionalContext": additional_context,
+        }
+    }
+    print(json.dumps(response))
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

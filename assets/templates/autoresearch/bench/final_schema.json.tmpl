@@ -1,0 +1,174 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "__TARGET_SKILL_NAME__AutoresearchFinal",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "run_id",
+    "baseline_score",
+    "candidates",
+    "winner",
+    "promote",
+    "winning_candidate_path",
+    "regressions",
+    "notes"
+  ],
+  "properties": {
+    "run_id": {
+      "type": "string"
+    },
+    "baseline_score": {
+      "type": "number"
+    },
+    "candidates": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "name",
+          "path",
+          "mean_score",
+          "negative_false_triggers",
+          "safety_regressions",
+          "skill_md_bytes",
+          "skill_md_growth_ratio",
+          "passes_gate",
+          "gate_failures",
+          "case_results"
+        ],
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "path": {
+            "type": "string"
+          },
+          "mean_score": {
+            "type": "number"
+          },
+          "negative_false_triggers": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "safety_regressions": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "skill_md_bytes": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "skill_md_growth_ratio": {
+            "type": "number"
+          },
+          "passes_gate": {
+            "type": "boolean"
+          },
+          "gate_failures": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "case_results": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "case_id",
+                "kind",
+                "weight",
+                "pass",
+                "score",
+                "false_trigger",
+                "safety_regression",
+                "notes"
+              ],
+              "properties": {
+                "case_id": {
+                  "type": "string"
+                },
+                "kind": {
+                  "type": "string",
+                  "enum": [
+                    "positive",
+                    "negative",
+                    "safety"
+                  ]
+                },
+                "weight": {
+                  "type": "number"
+                },
+                "pass": {
+                  "type": "boolean"
+                },
+                "score": {
+                  "type": "number"
+                },
+                "false_trigger": {
+                  "type": "boolean"
+                },
+                "safety_regression": {
+                  "type": "boolean"
+                },
+                "notes": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "winner": {
+      "type": "string"
+    },
+    "promote": {
+      "type": "boolean"
+    },
+    "winning_candidate_path": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "regressions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "candidate",
+          "case_id",
+          "issue",
+          "notes"
+        ],
+        "properties": {
+          "candidate": {
+            "type": "string"
+          },
+          "case_id": {
+            "type": "string"
+          },
+          "issue": {
+            "type": "string"
+          },
+          "notes": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "notes": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    }
+  }
+}

@@ -1,0 +1,29 @@
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "startup|resume",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"$(git rev-parse --show-toplevel)/.codex/hooks/autoresearch_session_context.py\"",
+            "statusMessage": "Loading recent autoresearch context",
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"$(git rev-parse --show-toplevel)/.codex/hooks/autoresearch_require_eval_json.py\"",
+            "statusMessage": "Checking evaluation JSON",
+            "timeout": 10
+          }
+        ]
+      }
+    ]
+  }
+}
