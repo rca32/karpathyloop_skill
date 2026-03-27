@@ -1,6 +1,6 @@
 ---
 name: bootstrap-skill-autoresearch
-description: Turn a single-skill Codex repository into a self-improving autoresearch workspace. Use when a repo currently has exactly one target skill and Codex needs to add AGENTS.md guardrails, autoresearch benchmarks, evaluator/mutator agents, hooks, and a generic run loop without actually running the mutation loop yet.
+description: Turn a single-skill Codex repository into a self-improving autoresearch workspace. Use when a repo currently has exactly one target skill and Codex needs to add AGENTS.md guardrails, autoresearch benchmarks, evaluator/mutator agents, hooks, and a generic run loop without actually running the mutation loop yet, with optional Codex automation suggestions for scheduled runs after bootstrap.
 ---
 
 # Bootstrap Skill Autoresearch
@@ -52,6 +52,14 @@ Create a reusable autoresearch scaffold for one target skill. Favor deterministi
    ```bash
    python3 autoresearch/run_autoresearch.py --mode manual
    ```
+7. Support Codex automation only when the user explicitly asks for it after bootstrap and validation succeed.
+   - Treat `python3 autoresearch/run_autoresearch.py --mode scheduled` as the canonical Codex automation entrypoint.
+   - Ask only for the schedule if it is missing. Do not ask for extra workspace choices when the target repo is already known.
+   - Emit a suggested-create Codex automation instead of creating repo-local automation files.
+   - Use the default automation name `Autoresearch Loop`.
+   - Keep `cwds` pinned to the target repository root only.
+   - Use this fixed automation prompt: `Run python3 autoresearch/run_autoresearch.py --mode scheduled in the target repo. Then inspect autoresearch/leaderboard.json and the latest autoresearch/runs/*/final.json. Summarize baseline score, winning candidate, whether promotion happened, regressions, and any risks needing human review in the inbox.`
+   - Remind the user that scheduled runs use the same promotion gate as manual runs, so a passing candidate may update the live skill.
 
 ## Guardrails
 
@@ -60,6 +68,7 @@ Create a reusable autoresearch scaffold for one target skill. Favor deterministi
 - Keep candidate mutation scope limited to the target skill or `autoresearch/candidates/<RUN_ID>/`.
 - Prefer explicit benchmark drafts over generic fallback bundles when quality matters.
 - If the repo-root itself is the skill, preserve `.git`, `.codex`, `autoresearch`, and `AGENTS.md` during candidate copy/promotion.
+- Do not propose or modify Codex automations unless the user explicitly asks after bootstrap and validation.
 
 ## Resources
 

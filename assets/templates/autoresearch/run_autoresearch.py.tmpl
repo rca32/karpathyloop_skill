@@ -79,9 +79,26 @@ def build_workspace(root: Path | None = None) -> Workspace:
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="Run the __TARGET_SKILL_NAME__ autoresearch loop.")
-    parser.add_argument("--mode", choices=["manual", "scheduled"], required=True)
-    parser.add_argument("--run-id", help="Optional fixed run identifier.")
+    parser = argparse.ArgumentParser(
+        description=(
+            "Run the __TARGET_SKILL_NAME__ autoresearch loop. Use --mode scheduled "
+            "as the Codex automation entrypoint. Scheduled runs use the same promotion "
+            "gate as manual runs and can promote into the live skill."
+        )
+    )
+    parser.add_argument(
+        "--mode",
+        choices=["manual", "scheduled"],
+        required=True,
+        help=(
+            "manual for interactive runs; scheduled for Codex automations or external "
+            "schedulers. Both modes use the same promotion gate."
+        ),
+    )
+    parser.add_argument(
+        "--run-id",
+        help="Optional fixed run identifier for testing or external orchestration.",
+    )
     return parser.parse_args()
 
 

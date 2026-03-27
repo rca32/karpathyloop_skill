@@ -5,6 +5,7 @@ import argparse
 import csv
 import importlib.util
 import json
+import re
 import subprocess
 import sys
 import tempfile
@@ -131,6 +132,16 @@ def validate_hooks(hooks_path: Path) -> None:
         raise ValueError("Stop hook for autoresearch_require_eval_json.py is missing.")
 
 
+def validate_program_doc(program_path: Path) -> None:
+    content = program_path.read_text(encoding="utf-8")
+    if "python3 autoresearch/run_autoresearch.py --mode scheduled" not in content:
+        raise ValueError("Program doc must document the scheduled automation entrypoint.")
+    if "same promotion gate as manual runs" not in content:
+        raise ValueError("Program doc must warn that scheduled runs use the same promotion gate.")
+    if "update the live skill" not in content:
+        raise ValueError("Program doc must warn that scheduled runs may update the live skill.")
+
+
 def import_run_module(repo_root: Path):
     module_path = repo_root / "autoresearch" / "run_autoresearch.py"
     spec = importlib.util.spec_from_file_location("bootstrapped_run_autoresearch", module_path)
@@ -148,6 +159,20 @@ def validate_run_module(repo_root: Path) -> dict[str, Any]:
     cases = module.load_cases(workspace)
     if len(cases) != 18:
         raise ValueError("Generated run_autoresearch.py did not load 18 benchmark cases.")
+
+    help_completed = subprocess.run(
+        [sys.executable, str(repo_root / "autoresearch" / "run_autoresearch.py"), "--help"],
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+    normalized_help = re.sub(r"\s+", " ", help_completed.stdout)
+    if "Codex automation entrypoint" not in normalized_help:
+        raise ValueError("Generated run_autoresearch.py help must describe the automation entrypoint.")
+    if "same promotion gate" not in normalized_help:
+        raise ValueError("Generated run_autoresearch.py help must describe the shared promotion gate.")
+    if "live skill" not in normalized_help:
+        raise ValueError("Generated run_autoresearch.py help must warn that scheduled runs can update the live skill.")
 
     with tempfile.TemporaryDirectory(dir=workspace.candidates_dir) as tempdir:
         output_path = Path(tempdir) / "last_message.json"
@@ -190,6 +215,7 @@ def validate_run_module(repo_root: Path) -> dict[str, Any]:
     return {
         "skill_dir": str(workspace.skill_dir),
         "cases_loaded": len(cases),
+        "runner_help": "ok",
     }
 
 
@@ -205,6 +231,8 @@ def main() -> int:
 
         results["checks"]["files"] = {"required_files": len(REQUIRED_FILES)}
         results["checks"]["benchmark"] = load_cases(repo_root / "autoresearch" / "bench" / "cases.csv")
+        validate_program_doc(repo_root / "autoresearch" / "program.md")
+        results["checks"]["automation_docs"] = {"status": "ok"}
         validate_config(repo_root / ".codex" / "config.toml")
         results["checks"]["config"] = {"profiles": ["autoresearch_mutate", "autoresearch_eval"]}
         validate_hooks(repo_root / ".codex" / "hooks.json")

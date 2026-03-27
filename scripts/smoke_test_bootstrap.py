@@ -100,6 +100,19 @@ def import_generated_module(repo_root: Path):
     return module
 
 
+def assert_automation_contract(repo_root: Path) -> None:
+    program_doc = (repo_root / "autoresearch" / "program.md").read_text(encoding="utf-8")
+    assert "python3 autoresearch/run_autoresearch.py --mode scheduled" in program_doc
+    assert "same promotion gate as manual runs" in program_doc
+    assert "update the live skill" in program_doc
+
+    help_completed = run_command([sys.executable, str(repo_root / "autoresearch" / "run_autoresearch.py"), "--help"])
+    normalized_help = " ".join(help_completed.stdout.split())
+    assert "Codex automation entrypoint" in normalized_help
+    assert "same promotion gate" in normalized_help
+    assert "live skill" in normalized_help
+
+
 def run_iteration_smoke(repo_root: Path) -> None:
     module = import_generated_module(repo_root)
     workspace = module.build_workspace(repo_root)
@@ -183,6 +196,7 @@ def main() -> int:
             ]
         )
         run_command([sys.executable, str(VALIDATE_SCRIPT), str(json_repo)])
+        assert_automation_contract(json_repo)
         run_iteration_smoke(json_repo)
 
         existing_repo = temp_root / "existing-repo"
@@ -211,6 +225,7 @@ def main() -> int:
             ]
         )
         run_command([sys.executable, str(VALIDATE_SCRIPT), str(existing_repo)])
+        assert_automation_contract(existing_repo)
         merged_agents = (existing_repo / "AGENTS.md").read_text(encoding="utf-8")
         assert "# Existing Guardrails" in merged_agents
         assert "bootstrap-skill-autoresearch:start" in merged_agents
@@ -235,6 +250,7 @@ def main() -> int:
             ]
         )
         run_command([sys.executable, str(VALIDATE_SCRIPT), str(root_repo)])
+        assert_automation_contract(root_repo)
 
     print("Smoke tests passed.")
     return 0

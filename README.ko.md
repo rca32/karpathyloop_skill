@@ -35,6 +35,7 @@
 - evaluator, mutator, failure-miner agent 정의
 - Codex hook과 config wiring
 - 재사용 가능한 `autoresearch/run_autoresearch.py` 러너
+- Codex 자동화에 바로 연결할 수 있는 `--mode scheduled` 엔트리포인트
 - run artifact, candidate workspace, leaderboard
 
 핵심은 skill 개선 주변의 귀찮은 셋업 작업을 없애는 것입니다. 시간을 harness 재조립에 쓰지 말고, benchmark와 skill 자체를 더 좋게 만드는 데 쓰도록 돕습니다.
@@ -194,7 +195,22 @@ bootstrap과 validation 이후 대상 저장소로 이동해서 다음을 실행
 python3 autoresearch/run_autoresearch.py --mode manual
 ```
 
-생성된 runner는 외부 오케스트레이션용 `--mode scheduled`도 지원하지만, 이 저장소가 스케줄러까지 설정해 주지는 않습니다.
+Codex 자동화나 다른 스케줄러로 루프를 돌리고 싶다면 `python3 autoresearch/run_autoresearch.py --mode scheduled`를 사용하세요. scheduled 실행도 manual 실행과 동일한 promotion gate를 사용하므로, 우승 candidate가 실제 live skill을 갱신할 수 있습니다.
+
+## Codex 자동화 지원
+
+이 저장소는 bootstrap과 validation 이후 사용할 수 있는 Codex 자동화 친화 경로를 지원하지만, 자동화 파일을 직접 설치하거나 수정하지는 않습니다.
+
+- `python3 autoresearch/run_autoresearch.py --mode scheduled`를 공식 Codex 자동화 엔트리포인트로 취급하세요.
+- 실제로 주기 실행이 필요할 때만 Codex에 자동화 생성을 요청하세요.
+- 권장 자동화 이름은 `Autoresearch Loop`입니다.
+- 자동화 프롬프트는 다음 작업만 하도록 두는 것이 좋습니다.
+  `python3 autoresearch/run_autoresearch.py --mode scheduled`를 실행하고, `autoresearch/leaderboard.json`과 최신 `autoresearch/runs/<RUN_ID>/final.json`을 확인한 뒤, baseline score, winning candidate, promotion 여부, regressions, 사람 검토가 필요한 위험 요소를 inbox에 요약합니다.
+- 자동화의 작업 범위는 대상 저장소 하나로만 고정하세요.
+
+v1에서는 Codex 데스크톱 자동화를 1순위 대상으로 봅니다. 외부 스케줄러도 사용할 수 있지만, 보조 경로로 간주하고 같은 scheduled 엔트리포인트를 호출해야 합니다.
+
+git worktree 기반 자동화에 의존할 계획이라면, 대상 저장소에 최소 1개의 커밋이 이미 있어야 합니다. 생성된 runner도 일부 자동화 환경이 기존 `HEAD`를 요구한다는 점을 note로 남깁니다.
 
 ## Draft Bundle
 

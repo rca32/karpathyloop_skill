@@ -35,6 +35,7 @@
 - evaluator、mutator、failure-miner agent 定义
 - Codex hook 和 config wiring
 - 可复用的 `autoresearch/run_autoresearch.py` runner
+- 可直接接入 Codex 自动化的 `--mode scheduled` 入口
 - run artifact、candidate workspace 和 leaderboard
 
 目标是把 skill 迭代周围那些烦人的脚手架工作拿掉。这样团队可以把时间花在 benchmark 和 skill 本身，而不是一次次重新搭 harness。
@@ -194,7 +195,22 @@ python3 scripts/validate_scaffold.py /path/to/target-repo --json
 python3 autoresearch/run_autoresearch.py --mode manual
 ```
 
-生成出来的 runner 也支持 `--mode scheduled`，适合外部编排器调用，但这个仓库本身不会替你配置 scheduler。
+如果你想用 Codex 自动化或其他 scheduler 来驱动这个循环，请使用 `python3 autoresearch/run_autoresearch.py --mode scheduled`。scheduled 运行和 manual 运行共用同一套 promotion gate，所以胜出的 candidate 仍然可能更新 live skill。
+
+## Codex 自动化支持
+
+这个仓库支持一条在 bootstrap 和 validation 之后使用的、对 Codex 自动化友好的路径，但它不会自行安装或修改自动化文件。
+
+- 把 `python3 autoresearch/run_autoresearch.py --mode scheduled` 视为官方的 Codex 自动化入口。
+- 只有在你真的需要定期运行时，才让 Codex 帮你创建自动化。
+- 推荐的自动化名称是 `Autoresearch Loop`。
+- 自动化 prompt 最好只做下面这件事：
+  运行 `python3 autoresearch/run_autoresearch.py --mode scheduled`，然后检查 `autoresearch/leaderboard.json` 和最新的 `autoresearch/runs/<RUN_ID>/final.json`，把 baseline score、winning candidate、是否发生 promotion、regressions，以及需要人工审查的风险汇总到 inbox 中。
+- 自动化的工作范围应固定为目标仓库本身，不要扩散到其他目录。
+
+在 v1 中，Codex 桌面端自动化是首要支持对象。外部 scheduler 仍然可以使用，但属于次要路径，并且也应调用同一个 scheduled 入口。
+
+如果你打算依赖基于 git worktree 的自动化，请先确保目标仓库至少已经有一个 commit。生成出来的 runner 也会把这件事记到 note 里，因为有些自动化环境需要已有的 `HEAD`。
 
 ## Draft Bundle
 

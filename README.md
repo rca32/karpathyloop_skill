@@ -35,6 +35,7 @@ Point the bootstrap script at a repository that contains exactly one Codex skill
 - evaluator, mutator, and failure-miner agent definitions
 - Codex hooks and config wiring
 - a reusable `autoresearch/run_autoresearch.py` runner
+- a Codex automation-ready `--mode scheduled` entrypoint
 - run artifacts, candidate workspaces, and a leaderboard
 
 The goal is to remove the annoying setup work around skill iteration. You should spend your time improving the benchmark and the skill, not rebuilding the harness every time.
@@ -194,7 +195,22 @@ After bootstrap and validation, switch into the target repository and run:
 python3 autoresearch/run_autoresearch.py --mode manual
 ```
 
-The generated runner also accepts `--mode scheduled` for externally orchestrated use, but this repository does not set up a scheduler for you.
+Use `python3 autoresearch/run_autoresearch.py --mode scheduled` when you want Codex automations or another scheduler to drive the loop. Scheduled runs use the same promotion gate as manual runs, so a winning candidate can still update the live skill.
+
+## Codex Automation Support
+
+This repository supports a Codex automation-friendly path after bootstrap and validation, but it does not install or edit automation files on its own.
+
+- Treat `python3 autoresearch/run_autoresearch.py --mode scheduled` as the official Codex automation entrypoint.
+- Ask Codex to create an automation only when you actually want recurring runs.
+- The recommended automation name is `Autoresearch Loop`.
+- The automation prompt should do exactly this:
+  run `python3 autoresearch/run_autoresearch.py --mode scheduled`, inspect `autoresearch/leaderboard.json` and the latest run's `autoresearch/runs/<RUN_ID>/final.json`, then summarize baseline score, winning candidate, promotion outcome, regressions, and risks needing human review in the inbox.
+- Keep the automation scoped to the target repository only.
+
+For v1, Codex desktop automation is the primary target. External schedulers are still fine, but they are a secondary path and should call the same scheduled entrypoint.
+
+If you plan to rely on git worktree-backed automations, make sure the target repository already has at least one commit. The generated runner records this as a note because some automation environments need an existing `HEAD`.
 
 ## Draft Bundle
 
