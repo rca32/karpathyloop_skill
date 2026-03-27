@@ -6,6 +6,13 @@ If [karpathy/autoresearch](https://github.com/karpathy/autoresearch) asks, "what
 
 The answer is not "full autonomy, no brakes." The answer is a tighter loop: one target skill, a benchmark you can actually read, guardrails you can review, and promotion rules that make small wins count only when they are real.
 
+## Read This In
+
+- [English](README.md)
+- [한국어](README.ko.md)
+- [日本語](README.ja.md)
+- [简体中文](README.zh-CN.md)
+
 ## What Is the Karpathy Loop?
 
 In March 2026, Andrej Karpathy published [`autoresearch`](https://github.com/karpathy/autoresearch), a deliberately compact experiment in agent-driven research. The core idea is simple and sharp:
