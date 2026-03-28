@@ -195,7 +195,7 @@ bootstrap과 validation 이후 대상 저장소로 이동해서 다음을 실행
 python3 autoresearch/run_autoresearch.py --mode manual
 ```
 
-Codex 자동화나 다른 스케줄러로 루프를 돌리고 싶다면 `python3 autoresearch/run_autoresearch.py --mode scheduled`를 사용하세요. scheduled 실행도 manual 실행과 동일한 promotion gate를 사용하므로, 우승 candidate가 실제 live skill을 갱신할 수 있습니다. 호스트가 잠에서 깬 직후라면 scheduled 실행은 cold network stack에 붙지 않도록 스킵됩니다.
+Codex 자동화나 다른 스케줄러로 루프를 돌리고 싶다면 `python3 autoresearch/run_autoresearch.py --mode scheduled`를 사용하세요. scheduled 실행도 manual 실행과 동일한 promotion gate를 사용하므로, 우승 candidate가 실제 live skill을 갱신할 수 있습니다. 호스트가 macOS나 Windows에서 잠에서 깬 직후라면 scheduled 실행은 cold network stack에 붙지 않도록 스킵됩니다.
 
 ## Codex 자동화 지원
 
@@ -205,7 +205,7 @@ Codex 자동화나 다른 스케줄러로 루프를 돌리고 싶다면 `python3
 - 실제로 주기 실행이 필요할 때만 Codex에 자동화 생성을 요청하세요.
 - 권장 자동화 이름은 `Autoresearch Loop`입니다.
 - 자동화 프롬프트는 다음 작업만 하도록 두는 것이 좋습니다.
-  `python3 autoresearch/run_autoresearch.py --mode scheduled`를 실행하고, `autoresearch/leaderboard.json`과 최신 `autoresearch/runs/<RUN_ID>/final.json`을 확인한 뒤, baseline score, winning candidate, promotion 여부, regressions, 사람 검토가 필요한 위험 요소를 inbox에 요약합니다. 명령이 호스트의 최근 wake 때문에 스킵되었다면 그 사실을 적고 다음 scheduled window에서 다시 시도하세요.
+  `python3 autoresearch/run_autoresearch.py --mode scheduled`를 실행하고, `autoresearch/leaderboard.json`과 최신 `autoresearch/runs/<RUN_ID>/final.json`을 확인한 뒤, baseline score, winning candidate, promotion 여부, regressions, 사람 검토가 필요한 위험 요소를 inbox에 요약합니다. 명령이 호스트의 최근 wake 때문에 macOS나 Windows에서 스킵되었다면 그 사실을 적고 다음 scheduled window에서 다시 시도하세요.
 - 자동화의 작업 범위는 대상 저장소 하나로만 고정하세요.
 
 v1에서는 Codex 데스크톱 자동화를 1순위 대상으로 봅니다. 외부 스케줄러도 사용할 수 있지만, 보조 경로로 간주하고 같은 scheduled 엔트리포인트를 호출해야 합니다.

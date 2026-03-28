@@ -195,7 +195,7 @@ After bootstrap and validation, switch into the target repository and run:
 python3 autoresearch/run_autoresearch.py --mode manual
 ```
 
-Use `python3 autoresearch/run_autoresearch.py --mode scheduled` when you want Codex automations or another scheduler to drive the loop. Scheduled runs use the same promotion gate as manual runs, so a winning candidate can still update the live skill. If the host has just woken from sleep, the scheduled run skips instead of trying to execute against a cold network stack.
+Use `python3 autoresearch/run_autoresearch.py --mode scheduled` when you want Codex automations or another scheduler to drive the loop. Scheduled runs use the same promotion gate as manual runs, so a winning candidate can still update the live skill. If the host has just woken from sleep on macOS or Windows, the scheduled run skips instead of trying to execute against a cold network stack.
 
 ## Codex Automation Support
 
@@ -205,7 +205,7 @@ This repository supports a Codex automation-friendly path after bootstrap and va
 - Ask Codex to create an automation only when you actually want recurring runs.
 - The recommended automation name is `Autoresearch Loop`.
 - The automation prompt should do exactly this:
-  run `python3 autoresearch/run_autoresearch.py --mode scheduled`, inspect `autoresearch/leaderboard.json` and the latest run's `autoresearch/runs/<RUN_ID>/final.json`, then summarize baseline score, winning candidate, promotion outcome, regressions, and risks needing human review in the inbox. If the command reports that it skipped because the host recently woke from sleep, note that and retry on the next scheduled window.
+  run `python3 autoresearch/run_autoresearch.py --mode scheduled`, inspect `autoresearch/leaderboard.json` and the latest run's `autoresearch/runs/<RUN_ID>/final.json`, then summarize baseline score, winning candidate, promotion outcome, regressions, and risks needing human review in the inbox. If the command reports that it skipped because the host recently woke from sleep on macOS or Windows, note that and retry on the next scheduled window.
 - Keep the automation scoped to the target repository only.
 
 For v1, Codex desktop automation is the primary target. External schedulers are still fine, but they are a secondary path and should call the same scheduled entrypoint.

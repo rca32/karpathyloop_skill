@@ -18,7 +18,7 @@ Operating constraints:
 Scheduled automation support:
 - Use `python3 autoresearch/run_autoresearch.py --mode scheduled` as the Codex automation entrypoint.
 - Scheduled runs use the same promotion gate as manual runs, so a passing candidate may update the live skill.
-- If the host has just woken from sleep, skip the scheduled run and let the next cycle retry instead of running against a cold network stack.
+- If the host has just woken from sleep on macOS or Windows, skip the scheduled run and let the next cycle retry instead of running against a cold network stack.
 
 Candidate guardrails:
 __MUTATION_GUARDRAILS__

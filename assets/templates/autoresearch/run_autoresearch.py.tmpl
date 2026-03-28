@@ -92,7 +92,7 @@ def parse_args() -> argparse.Namespace:
             "Run the __TARGET_SKILL_NAME__ autoresearch loop. Use --mode scheduled "
             "as the Codex automation entrypoint. Scheduled runs use the same promotion "
             "gate as manual runs, can promote into the live skill, and skip when the host "
-            "has recently woken from sleep."
+            "has recently woken from sleep on macOS or Windows."
         )
     )
     parser.add_argument(
@@ -102,7 +102,7 @@ def parse_args() -> argparse.Namespace:
         help=(
             "manual for interactive runs; scheduled for Codex automations or external "
             "schedulers. Both modes use the same promotion gate, and scheduled runs skip "
-            "if the host has just woken from sleep."
+            "if the host has just woken from sleep on macOS or Windows."
         ),
     )
     parser.add_argument(
@@ -193,10 +193,23 @@ def parse_pmset_timestamp(raw_value: str) -> datetime | None:
         return None
 
 
-def recent_wake_skip_reason(window_minutes: int = WAKE_GUARD_MINUTES) -> str | None:
-    if window_minutes <= 0 or platform.system() != "Darwin":
+def parse_unix_milliseconds_timestamp(raw_value: str) -> datetime | None:
+    try:
+        milliseconds = int(raw_value)
+    except ValueError:
         return None
+    return datetime.fromtimestamp(milliseconds / 1000, tz=timezone.utc)
 
+
+def find_powershell_executable() -> str | None:
+    for candidate in ("powershell", "pwsh"):
+        resolved = shutil.which(candidate)
+        if resolved:
+            return resolved
+    return None
+
+
+def recent_macos_wake_time() -> datetime | None:
     try:
         completed = subprocess.run(
             ["pmset", "-g", "log"],
@@ -218,6 +231,47 @@ def recent_wake_skip_reason(window_minutes: int = WAKE_GUARD_MINUTES) -> str | N
         last_wake = parse_pmset_timestamp(match.group("timestamp"))
         if last_wake is not None:
             break
+    return last_wake
+
+
+def recent_windows_wake_time() -> datetime | None:
+    shell = find_powershell_executable()
+    if shell is None:
+        return None
+
+    command = (
+        "$evt = Get-WinEvent -FilterHashtable @{LogName='System'; "
+        "ProviderName='Microsoft-Windows-Power-Troubleshooter'; Id=1} -MaxEvents 1 "
+        "-ErrorAction SilentlyContinue; "
+        "if ($evt) { ([DateTimeOffset]$evt.TimeCreated).ToUnixTimeMilliseconds() }"
+    )
+    completed = subprocess.run(
+        [shell, "-NoProfile", "-NonInteractive", "-Command", command],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    if completed.returncode != 0:
+        return None
+
+    output = completed.stdout.strip()
+    if not output:
+        return None
+
+    return parse_unix_milliseconds_timestamp(output)
+
+
+def recent_wake_skip_reason(window_minutes: int = WAKE_GUARD_MINUTES) -> str | None:
+    if window_minutes <= 0:
+        return None
+
+    system = platform.system()
+    if system == "Darwin":
+        last_wake = recent_macos_wake_time()
+    elif system == "Windows":
+        last_wake = recent_windows_wake_time()
+    else:
+        return None
 
     if last_wake is None:
         return None
@@ -226,8 +280,8 @@ def recent_wake_skip_reason(window_minutes: int = WAKE_GUARD_MINUTES) -> str | N
     if elapsed < timedelta(minutes=window_minutes):
         elapsed_minutes = round(elapsed.total_seconds() / 60, 1)
         return (
-            f"Machine woke {elapsed_minutes} minutes ago, so scheduled runs are skipped "
-            f"for the first {window_minutes} minutes after wake."
+            f"Machine woke {elapsed_minutes} minutes ago on {system}, so scheduled runs "
+            f"are skipped for the first {window_minutes} minutes after wake."
         )
     return None
 

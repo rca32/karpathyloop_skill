@@ -173,8 +173,8 @@ def validate_run_module(repo_root: Path) -> dict[str, Any]:
         raise ValueError("Generated run_autoresearch.py help must describe the shared promotion gate.")
     if "live skill" not in normalized_help:
         raise ValueError("Generated run_autoresearch.py help must warn that scheduled runs can update the live skill.")
-    if "woken from sleep" not in normalized_help:
-        raise ValueError("Generated run_autoresearch.py help must mention the wake guard for scheduled runs.")
+    if "macOS or Windows" not in normalized_help:
+        raise ValueError("Generated run_autoresearch.py help must mention the wake guard for macOS and Windows.")
 
     with tempfile.TemporaryDirectory(dir=workspace.candidates_dir) as tempdir:
         output_path = Path(tempdir) / "last_message.json"
