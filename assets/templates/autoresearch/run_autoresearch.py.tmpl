@@ -5,12 +5,13 @@ import argparse
 import csv
 import json
 import os
+import platform
 import re
 import shutil
 import subprocess
 from collections import Counter
 from dataclasses import dataclass
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any, Callable, Optional
 
@@ -27,6 +28,13 @@ FINAL_REQUIRED_KEYS = {
     "notes",
 }
 ROOT_SKILL_EXCLUDES = {".git", ".codex", "autoresearch", "AGENTS.md", "HYPOTHESIS.md"}
+try:
+    WAKE_GUARD_MINUTES = max(int(os.environ.get("AUTORESEARCH_WAKE_GUARD_MINUTES", "15")), 0)
+except ValueError:
+    WAKE_GUARD_MINUTES = 15
+PMSET_WAKE_RE = re.compile(
+    r"^\s*(?P<timestamp>\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2} [+-]\d{4})\s+Wake\b"
+)
 
 Executor = Callable[
     [
@@ -83,7 +91,8 @@ def parse_args() -> argparse.Namespace:
         description=(
             "Run the __TARGET_SKILL_NAME__ autoresearch loop. Use --mode scheduled "
             "as the Codex automation entrypoint. Scheduled runs use the same promotion "
-            "gate as manual runs and can promote into the live skill."
+            "gate as manual runs, can promote into the live skill, and skip when the host "
+            "has recently woken from sleep."
         )
     )
     parser.add_argument(
@@ -92,7 +101,8 @@ def parse_args() -> argparse.Namespace:
         required=True,
         help=(
             "manual for interactive runs; scheduled for Codex automations or external "
-            "schedulers. Both modes use the same promotion gate."
+            "schedulers. Both modes use the same promotion gate, and scheduled runs skip "
+            "if the host has just woken from sleep."
         ),
     )
     parser.add_argument(
@@ -174,6 +184,52 @@ def parse_last_message_as_json(output_path: Path) -> dict[str, Any]:
     if not isinstance(parsed, dict):
         raise ValueError(f"Expected a JSON object in {output_path}")
     return parsed
+
+
+def parse_pmset_timestamp(raw_value: str) -> datetime | None:
+    try:
+        return datetime.strptime(raw_value, "%Y-%m-%d %H:%M:%S %z")
+    except ValueError:
+        return None
+
+
+def recent_wake_skip_reason(window_minutes: int = WAKE_GUARD_MINUTES) -> str | None:
+    if window_minutes <= 0 or platform.system() != "Darwin":
+        return None
+
+    try:
+        completed = subprocess.run(
+            ["pmset", "-g", "log"],
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+    except FileNotFoundError:
+        return None
+
+    if completed.returncode != 0 or not completed.stdout:
+        return None
+
+    last_wake: datetime | None = None
+    for line in reversed(completed.stdout.splitlines()):
+        match = PMSET_WAKE_RE.match(line)
+        if not match:
+            continue
+        last_wake = parse_pmset_timestamp(match.group("timestamp"))
+        if last_wake is not None:
+            break
+
+    if last_wake is None:
+        return None
+
+    elapsed = datetime.now(timezone.utc) - last_wake.astimezone(timezone.utc)
+    if elapsed < timedelta(minutes=window_minutes):
+        elapsed_minutes = round(elapsed.total_seconds() / 60, 1)
+        return (
+            f"Machine woke {elapsed_minutes} minutes ago, so scheduled runs are skipped "
+            f"for the first {window_minutes} minutes after wake."
+        )
+    return None
 
 
 def toml_quoted(value: str) -> str:
@@ -705,6 +761,21 @@ def run_iteration(
 
 def main() -> int:
     args = parse_args()
+    if args.mode == "scheduled":
+        skip_reason = recent_wake_skip_reason()
+        if skip_reason:
+            print(
+                json.dumps(
+                    {
+                        "mode": args.mode,
+                        "status": "skipped",
+                        "reason": skip_reason,
+                    },
+                    indent=2,
+                )
+            )
+            return 0
+
     workspace = build_workspace()
     payload = run_iteration(workspace, mode=args.mode, run_id=args.run_id)
     print(json.dumps(payload, indent=2))
