@@ -54,12 +54,16 @@ Create a reusable autoresearch scaffold for one target skill. Favor deterministi
    ```
 7. Support Codex automation only when the user explicitly asks for it after bootstrap and validation succeed.
    - Treat `python3 autoresearch/run_autoresearch.py --mode scheduled` as the canonical Codex automation entrypoint.
+   - Before proposing that command, verify the actual interpreter the repo will get from `python3 --version`. If the run loop uses Python 3.10+ syntax and `python3` is older, pin the automation to an available compatible interpreter such as `python3.12`.
+   - Do not assume `flock` exists. On macOS or other environments where `flock` may be absent, prefer a portable non-overlap pattern such as a short Python `fcntl` lock wrapper instead of emitting a brittle `flock -n ...` command.
    - Ask only for the schedule if it is missing. Do not ask for extra workspace choices when the target repo is already known.
    - Emit a suggested-create Codex automation instead of creating repo-local automation files.
    - Use the default automation name `Autoresearch Loop`.
    - Keep `cwds` pinned to the target repository root only.
    - Use this fixed automation prompt: `Run python3 autoresearch/run_autoresearch.py --mode scheduled in the target repo. Then inspect autoresearch/leaderboard.json and the latest autoresearch/runs/*/final.json. Summarize baseline score, winning candidate, whether promotion happened, regressions, and any risks needing human review in the inbox.`
    - Remind the user that scheduled runs use the same promotion gate as manual runs, so a passing candidate may update the live skill.
+   - If scheduled runs fail while manual runs succeed, diagnose the automation environment before blaming the skill logic. Check for missing `flock`, Python-version mismatch, and `codex exec` transport or state-db initialization failures, then surface those as environment issues in the recommendation or follow-up summary.
+   - If the failure is environment-only, keep the skill guidance unchanged and report the exact mismatch instead of suggesting a research tweak.
 
 ## Guardrails
 
@@ -69,6 +73,8 @@ Create a reusable autoresearch scaffold for one target skill. Favor deterministi
 - Prefer explicit benchmark drafts over generic fallback bundles when quality matters.
 - If the repo-root itself is the skill, preserve `.git`, `.codex`, `autoresearch`, and `AGENTS.md` during candidate copy/promotion.
 - Do not propose or modify Codex automations unless the user explicitly asks after bootstrap and validation.
+- When advising on scheduled automation, prefer portable commands that match the host environment over nominally canonical commands that are likely to fail at runtime.
+- When a manual run succeeds but a scheduled run fails, treat that as a deployment/environment issue first, not a benchmark or prompt-quality issue.
 
 ## Resources
 
